@@ -188,7 +188,10 @@
 <div id="main-app">
   <div class="user-bar">
     <span class="user-email" id="user-email-display"></span>
-    <button class="logout-btn" onclick="doLogout()">登出</button>
+    <div style="display:flex;gap:8px;">
+      <button class="logout-btn" onclick="hardRefresh()" title="強制重新整理">↺</button>
+      <button class="logout-btn" onclick="doLogout()">登出</button>
+    </div>
   </div>
   <div class="nav">
     <button class="nav-btn active" onclick="showPage('staff',this)">叫號操作</button>
@@ -767,6 +770,20 @@ window.showAlert = function(id, msg) {
   clearTimeout(el._t); el._t=setTimeout(function(){ el.style.display='none'; },3000);
 };
 function showAlert(id, msg) { window.showAlert(id, msg); }
+</script>
+<script>
+function hardRefresh() {
+  // 清除 Service Worker 快取後強制重新載入
+  if ('caches' in window) {
+    caches.keys().then(function(names) {
+      names.forEach(function(name) { caches.delete(name); });
+    }).then(function() {
+      location.reload(true);
+    });
+  } else {
+    location.reload(true);
+  }
+}
 </script>
 </body>
 </html>
