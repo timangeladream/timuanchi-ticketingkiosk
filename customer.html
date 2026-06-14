@@ -222,7 +222,9 @@ window._myTicketId    = null; // 這位客人的號碼
 function pad(n) { return String(n).padStart(3,'0'); }
 function nowTime() {
   var d = new Date();
-  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  var date = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var time = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return date + ' ' + time;
 }
 function calcWait(svcIndex) {
   var total = 0;
