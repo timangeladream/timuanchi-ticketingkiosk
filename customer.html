@@ -189,7 +189,7 @@
 
 <script type="module">
 import { initializeApp }                        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, onValue }       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMuP39XjBgFJo4TgKPRGKNESvcaHBkcUY",
@@ -394,18 +394,12 @@ window.confirmTicket = function() {
   window._totalIssued++;
   window._myTicketId = ticketId;
 
-  // 同步更新 allLog（完整記錄）
-  var allLog = [];
-  // 從現有 allLog 取得，不直接從 Firebase 讀（避免非同步問題，直接帶入）
-  set(stateRef, {
-    currentCalled: window._currentCalled,
-    currentSvc:    window._currentSvc,
-    totalIssued:   window._totalIssued,
-    queue:         window._queue,
-    doneList:      window._doneList.length ? window._doneList : null,
-    allLog:        buildAllLog(),
-    counters:      window._services.map(function(s){ return s.counter; }),
-    ts:            Date.now()
+  // 只更新 queue、totalIssued、counters，不覆蓋其他店員資料
+  update(stateRef, {
+    totalIssued: window._totalIssued,
+    queue:       window._queue,
+    counters:    window._services.map(function(s){ return s.counter; }),
+    ts:          Date.now()
   });
 
   // sessionStorage 保存
@@ -477,15 +471,11 @@ window.resetTicket = function() {
       cancelledItem.cancelTime = nowTime();
       window._cancelledList.push(cancelledItem);
     }
-    set(stateRef, {
-      currentCalled:  window._currentCalled,
-      currentSvc:     window._currentSvc,
-      totalIssued:    window._totalIssued,
-      queue:          window._queue.length          ? window._queue          : null,
-      doneList:       window._doneList.length       ? window._doneList       : null,
-      cancelledList:  window._cancelledList.length  ? window._cancelledList  : null,
-      counters:       window._services.map(function(s){ return s.counter; }),
-      ts:             Date.now()
+    // 只更新 queue 和 cancelledList，不覆蓋其他店員資料
+    update(stateRef, {
+      queue:         window._queue.length         ? window._queue         : null,
+      cancelledList: window._cancelledList.length ? window._cancelledList : null,
+      ts:            Date.now()
     });
   }
 
