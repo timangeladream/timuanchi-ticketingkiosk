@@ -224,7 +224,7 @@
       </div>
     </div>
     <button class="btn btn-gold" onclick="callNext()">叫下一號</button>
-    <button class="btn" id="cancelled-btn" onclick="showCancelledLog()" style="display:none;">今日已取消（0）</button>
+    <button class="btn" id="cancelled-btn" onclick="showCancelledLog()">今日已取消（0）</button>
     <div class="divider"></div>
     <div class="section-label">等待中</div>
     <div id="queue-list"><p class="empty-msg">目前無人等待</p></div>
@@ -568,12 +568,7 @@ function renderStaff() {
   // 已取消按鈕
   var cancelBtn = document.getElementById('cancelled-btn');
   if (cancelBtn) {
-    if (window._cancelledList.length > 0) {
-      cancelBtn.style.display = 'block';
-      cancelBtn.textContent   = '今日已取消（' + window._cancelledList.length + '）';
-    } else {
-      cancelBtn.style.display = 'none';
-    }
+    cancelBtn.textContent = '今日已取消（' + window._cancelledList.length + '）';
   }
   var el = document.getElementById('queue-list');
   if (!window._queue.length) { el.innerHTML='<p class="empty-msg">目前無人等待</p>'; return; }
