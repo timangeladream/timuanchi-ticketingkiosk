@@ -210,9 +210,10 @@ window._services = [
   { name: '調整手鏈長度', prefix: 'B', mins: 20, counter: 0 },
   { name: '客製化款式',  prefix: 'C', mins: 45, counter: 0 }
 ];
-window._queue         = [];
-window._doneList      = [];
-window._totalIssued   = 0;
+window._queue          = [];
+window._doneList       = [];
+window._cancelledList  = [];
+window._totalIssued    = 0;
 window._currentCalled = '---';
 window._currentSvc    = '尚未開始叫號';
 window._shopName      = '飾品工作室';
@@ -278,8 +279,9 @@ onValue(stateRef, function(snap) {
     window._currentCalled = d.currentCalled || '---';
     window._currentSvc    = d.currentSvc    || '尚未開始叫號';
     window._totalIssued   = d.totalIssued   || 0;
-    window._queue         = d.queue    ? Object.values(d.queue)    : [];
-    window._doneList      = d.doneList ? Object.values(d.doneList) : [];
+    window._queue         = d.queue         ? Object.values(d.queue)         : [];
+    window._doneList      = d.doneList      ? Object.values(d.doneList)      : [];
+    window._cancelledList = d.cancelledList ? Object.values(d.cancelledList) : [];
     if (d.counters) d.counters.forEach(function(c,i){ if(window._services[i]) window._services[i].counter=c; });
   }
   renderLive();
@@ -465,18 +467,25 @@ window.resetTicket = function() {
   }
   if (!confirm('確定要取消目前的號碼並重新取號嗎？')) return;
 
-  // 從 Firebase queue 移除原本的號碼
+  // 把原本的號碼標記為已取消，移到 cancelledList
   var id = window._myTicketId;
   if (id) {
-    window._queue = window._queue.filter(function(item){ return item.id !== id; });
+    var cancelIdx = window._queue.findIndex(function(item){ return item.id === id; });
+    if (cancelIdx !== -1) {
+      var cancelledItem = window._queue.splice(cancelIdx, 1)[0];
+      cancelledItem.status     = 'cancelled';
+      cancelledItem.cancelTime = nowTime();
+      window._cancelledList.push(cancelledItem);
+    }
     set(stateRef, {
-      currentCalled: window._currentCalled,
-      currentSvc:    window._currentSvc,
-      totalIssued:   window._totalIssued,
-      queue:         window._queue.length ? window._queue : null,
-      doneList:      window._doneList.length ? window._doneList : null,
-      counters:      window._services.map(function(s){ return s.counter; }),
-      ts:            Date.now()
+      currentCalled:  window._currentCalled,
+      currentSvc:     window._currentSvc,
+      totalIssued:    window._totalIssued,
+      queue:          window._queue.length          ? window._queue          : null,
+      doneList:       window._doneList.length       ? window._doneList       : null,
+      cancelledList:  window._cancelledList.length  ? window._cancelledList  : null,
+      counters:       window._services.map(function(s){ return s.counter; }),
+      ts:             Date.now()
     });
   }
 

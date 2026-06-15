@@ -73,7 +73,8 @@
   .status-tag { font-size: 10px; font-weight: 500; letter-spacing: 0.06em; border-radius: 4px; padding: 2px 7px; white-space: nowrap; }
   .status-waiting  { background: rgba(90,87,79,0.4);   color: var(--text-sub); }
   .status-progress { background: rgba(201,168,76,0.15); color: var(--gold); }
-  .status-done     { background: rgba(39,174,96,0.15);  color: #5cb85c; }
+  .status-done      { background: rgba(39,174,96,0.15);  color: #5cb85c; }
+  .status-cancelled { background: rgba(90,87,79,0.3);   color: #6a6660; }
   .queue-item-actions { display: flex; gap: 8px; }
   .act-btn { flex: 1; padding: 7px 0; border-radius: 7px; font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-sub); transition: background 0.15s, color 0.15s, border-color 0.15s; }
   .act-btn.primary { border-color: var(--gold); color: var(--gold); }
@@ -223,6 +224,7 @@
       </div>
     </div>
     <button class="btn btn-gold" onclick="callNext()">叫下一號</button>
+    <button class="btn" id="cancelled-btn" onclick="showCancelledLog()" style="display:none;">今日已取消（0）</button>
     <div class="divider"></div>
     <div class="section-label">等待中</div>
     <div id="queue-list"><p class="empty-msg">目前無人等待</p></div>
@@ -272,6 +274,17 @@
         <button class="logout-btn" onclick="doSendPasswordReset()">寄送重設信</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- 已取消 Modal -->
+<div class="modal-overlay" id="modal-cancelled">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">今日已取消</span>
+      <button class="modal-close" onclick="document.getElementById('modal-cancelled').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-cancelled-content"></div>
   </div>
 </div>
 
@@ -413,9 +426,10 @@ async function checkDayRollover() {
   var snap = await get(stateRef);
   var d = snap.val();
   if (d) {
-    var queueItems  = d.queue    ? Object.values(d.queue)    : [];
-    var doneItems   = d.doneList ? Object.values(d.doneList) : [];
-    var allItems    = queueItems.concat(doneItems);
+    var queueItems     = d.queue         ? Object.values(d.queue)         : [];
+    var doneItems      = d.doneList      ? Object.values(d.doneList)      : [];
+    var cancelledItems = d.cancelledList ? Object.values(d.cancelledList) : [];
+    var allItems       = queueItems.concat(doneItems).concat(cancelledItems);
     var totalIssued = d.totalIssued || 0;
 
     if (allItems.length > 0 || totalIssued > 0) {
@@ -509,19 +523,21 @@ function startListening() {
 
 function pushState() {
   set(stateRef, {
-    currentCalled: window._currentCalled, currentSvc: window._currentSvc,
-    totalIssued:   window._totalIssued,
-    queue:         window._queue.length    ? window._queue    : null,
-    doneList:      window._doneList.length ? window._doneList : null,
-    counters:      window._services.map(function(s){ return s.counter; }),
-    ts:            Date.now()
+    currentCalled:  window._currentCalled, currentSvc: window._currentSvc,
+    totalIssued:    window._totalIssued,
+    queue:          window._queue.length         ? window._queue         : null,
+    doneList:       window._doneList.length      ? window._doneList      : null,
+    cancelledList:  window._cancelledList.length ? window._cancelledList : null,
+    counters:       window._services.map(function(s){ return s.counter; }),
+    ts:             Date.now()
   });
 }
 
 // ── STATUS ───────────────────────────────────────────────
 function statusTag(st) {
-  if (st==='progress') return '<span class="status-tag status-progress">處理中</span>';
-  if (st==='done')     return '<span class="status-tag status-done">已完成</span>';
+  if (st==='progress')  return '<span class="status-tag status-progress">處理中</span>';
+  if (st==='done')      return '<span class="status-tag status-done">已完成</span>';
+  if (st==='cancelled') return '<span class="status-tag status-cancelled">已取消</span>';
   return '<span class="status-tag status-waiting">等待中</span>';
 }
 
@@ -547,6 +563,16 @@ function renderStaff() {
   document.getElementById('current-svc-display').textContent = window._currentSvc;
   document.getElementById('total-issued').textContent        = window._totalIssued;
   document.getElementById('waiting-count').textContent       = window._queue.length;
+  // 已取消按鈕
+  var cancelBtn = document.getElementById('cancelled-btn');
+  if (cancelBtn) {
+    if (window._cancelledList.length > 0) {
+      cancelBtn.style.display = 'block';
+      cancelBtn.textContent   = '今日已取消（' + window._cancelledList.length + '）';
+    } else {
+      cancelBtn.style.display = 'none';
+    }
+  }
   var el = document.getElementById('queue-list');
   if (!window._queue.length) { el.innerHTML='<p class="empty-msg">目前無人等待</p>'; return; }
   el.innerHTML = window._queue.map(function(item,idx) {
@@ -579,13 +605,36 @@ window.callNext = function() {
 
 window.resetAll = function() {
   if (!confirm('確定要重置今日所有號碼嗎？')) return;
-  window._queue=[]; window._doneList=[]; window._totalIssued=0;
+  window._queue=[]; window._doneList=[]; window._cancelledList=[]; window._totalIssued=0;
   window._currentCalled='---'; window._currentSvc='尚未開始叫號';
   window._services.forEach(function(s){ s.counter=0; });
   pushState();
 };
 
 // ── 明細查詢 ─────────────────────────────────────────────
+window.showCancelledLog = function() {
+  var el = document.getElementById('modal-cancelled-content');
+  if (!window._cancelledList.length) {
+    el.innerHTML = '<p class="empty-msg">今日無取消記錄</p>';
+  } else {
+    el.innerHTML = window._cancelledList.slice().reverse().map(function(item) {
+      return '<div class="log-item">'
+        +'<span class="log-badge">'+item.id+'</span>'
+        +'<div class="log-detail">'
+        +'<div class="log-svc">'+item.name+'</div>'
+        +'<div class="log-meta">取號 '+(item.time||'--:--')+'　取消 '+(item.cancelTime||'--:--')+'</div>'
+        +'</div>'
+        +statusTag('cancelled')
+        +'</div>';
+    }).join('');
+  }
+  document.getElementById('modal-cancelled').classList.add('show');
+};
+
+document.getElementById('modal-cancelled').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('show');
+});
+
 window.showTodayLog = async function() {
   _filterMode = 'today'; _currentPage = 1;
   document.querySelectorAll('.filter-tab').forEach(function(t,i){ t.classList.toggle('active', i===0); });
@@ -621,7 +670,7 @@ window.applyCustomRange = function() {
 async function loadAndRenderLog() {
   var today = todayStr();
   // 今日資料：從 queue + doneList 取
-  var todayItems = window._queue.concat(window._doneList).map(function(item) {
+  var todayItems = window._queue.concat(window._doneList).concat(window._cancelledList).map(function(item) {
     return Object.assign({}, item, { date: item.date || today });
   });
 
@@ -690,9 +739,11 @@ function renderModalPage() {
   var pageItems = _filteredLogs.slice(start, start+PAGE_SIZE);
 
   // 統計
-  var done = _filteredLogs.filter(function(i){ return i.status==='done'; }).length;
+  var done      = _filteredLogs.filter(function(i){ return i.status==='done'; }).length;
+  var cancelled = _filteredLogs.filter(function(i){ return i.status==='cancelled'; }).length;
+  var active    = total - done - cancelled;
   document.getElementById('log-summary').innerHTML =
-    '共 <span>'+total+'</span> 筆　已完成 <span>'+done+'</span> 筆　等待/處理中 <span>'+(total-done)+'</span> 筆';
+    '共 <span>'+total+'</span> 筆　已完成 <span>'+done+'</span> 筆　已取消 <span>'+cancelled+'</span> 筆　等待/處理中 <span>'+active+'</span> 筆';
 
   // 列表
   var el = document.getElementById('modal-log-content');
