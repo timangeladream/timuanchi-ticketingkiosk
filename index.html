@@ -382,9 +382,10 @@ window._services = [
   { name: '調整手鏈長度', prefix: 'B', mins: 20, counter: 0 },
   { name: '客製化款式',  prefix: 'C', mins: 45, counter: 0 }
 ];
-window._queue        = [];
-window._doneList     = [];
-window._totalIssued  = 0;
+window._queue          = [];
+window._doneList       = [];
+window._cancelledList  = [];
+window._totalIssued    = 0;
 window._currentCalled = '---';
 window._currentSvc   = '尚未開始叫號';
 window._shopName     = '飾品工作室';
@@ -505,8 +506,9 @@ function startListening() {
     window._currentCalled = d.currentCalled || '---';
     window._currentSvc    = d.currentSvc    || '尚未開始叫號';
     window._totalIssued   = d.totalIssued   || 0;
-    window._queue         = d.queue    ? Object.values(d.queue)    : [];
-    window._doneList      = d.doneList ? Object.values(d.doneList) : [];
+    window._queue         = d.queue         ? Object.values(d.queue)         : [];
+    window._doneList      = d.doneList      ? Object.values(d.doneList)      : [];
+    window._cancelledList = d.cancelledList ? Object.values(d.cancelledList) : [];
     if (d.counters) d.counters.forEach(function(c,i){ if(window._services[i]) window._services[i].counter=c; });
     renderStaff();
   });
