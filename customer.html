@@ -149,6 +149,8 @@
       <div style="font-size:12px;color:var(--text-dim);text-align:center;padding:0 8px 14px;line-height:1.7;">
         請保留此頁面不要關閉，可重新整理不影響您的號碼
       </div>
+      <!-- 社群連結 -->
+      <div id="shop-links" style="display:none;text-align:center;padding:16px 0 8px;border-top:1px solid var(--border);margin-bottom:10px;"></div>
       <button class="btn" onclick="resetTicket()">重新取號</button>
       <div class="divider"></div>
     </div>
@@ -217,6 +219,8 @@ window._totalIssued    = 0;
 window._currentCalled = '---';
 window._currentSvc    = '尚未開始叫號';
 window._shopName      = '飾品工作室';
+window._shopIg        = '';
+window._shopWebsite   = '';
 window._selectedIdx   = -1;
 window._myTicketId    = null; // 這位客人的號碼
 
@@ -311,13 +315,41 @@ onValue(stateRef, function(snap) {
 
 onValue(settingsRef, function(snap) {
   var d = snap.val(); if (!d) return;
-  window._shopName = d.shopName || '飾品工作室';
+  window._shopName    = d.shopName    || '飾品工作室';
+  window._shopIg      = d.shopIg      || '';
+  window._shopWebsite = d.shopWebsite || '';
+  updateShopLinks();
   if (d.services) d.services.forEach(function(s,i){
     if(window._services[i]){ window._services[i].name=s.name; window._services[i].prefix=s.prefix; window._services[i].mins=s.mins; }
   });
   document.getElementById('ticket-shop-name').textContent = window._shopName;
   renderServiceButtons();
 });
+
+function updateShopLinks() {
+  var block = document.getElementById('shop-links');
+  if (!block) return;
+  var ig  = window._shopIg;
+  var web = window._shopWebsite;
+  if (!ig && !web) { block.style.display = 'none'; return; }
+  block.style.display = 'block';
+  var html = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;letter-spacing:0.06em;">🌸 等待時也可以逛逛</div>';
+  html += '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">';
+  if (ig) {
+    var igUrl = ig.startsWith('http') ? ig : 'https://instagram.com/' + ig.replace('@','');
+    html += '<a href="'+igUrl+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);text-decoration:none;font-size:13px;">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>'
+      + ig + '</a>';
+  }
+  if (web) {
+    var webUrl = web.startsWith('http') ? web : 'https://' + web;
+    html += '<a href="'+webUrl+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);text-decoration:none;font-size:13px;">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+      + '官網</a>';
+  }
+  html += '</div>';
+  block.innerHTML = html;
+}
 
 function renderLive() {
   document.getElementById('live-current').textContent = window._currentCalled;

@@ -389,6 +389,8 @@ window._totalIssued    = 0;
 window._currentCalled = '---';
 window._currentSvc   = '尚未開始叫號';
 window._shopName     = '飾品工作室';
+window._shopIg       = '';
+window._shopWebsite  = '';
 
 // 明細狀態
 var _filterMode   = 'today';
@@ -516,6 +518,8 @@ function startListening() {
     var d = snap.val(); if (!d) return;
     window._shopName  = d.shopName  || 'TimuAnchi 提姆安琪';
     window._shopNames = d.shopNames ? Object.values(d.shopNames) : window._shopNames;
+    window._shopIg      = d.shopIg      || '';
+    window._shopWebsite = d.shopWebsite || '';
     document.getElementById('shop-name-input').value = window._shopName;
     if (d.services) d.services.forEach(function(s,i){ if(window._services[i]){ window._services[i].name=s.name; window._services[i].prefix=s.prefix; window._services[i].mins=s.mins; }});
     if (d.startNum) document.getElementById('start-num').value = d.startNum;
@@ -812,28 +816,37 @@ window.removeService = function(i) {
 };
 // ── 店家名稱管理 ─────────────────────────────────────────
 window._shopNames = [
-  'TimuAnchi 提姆安琪',
-  'AngelaLotus dreams'
+  { name: 'TimuAnchi 提姆安琪', ig: '', website: '' },
+  { name: 'AngelaLotus dreams', ig: '', website: '' }
 ];
 
 function renderShopNameList() {
   var el = document.getElementById('shop-name-list');
   if (!el) return;
-  el.innerHTML = window._shopNames.map(function(name, i) {
+  el.innerHTML = window._shopNames.map(function(sn, i) {
+    var name = typeof sn === 'string' ? sn : sn.name;
+    var ig   = typeof sn === 'string' ? '' : (sn.ig || '');
+    var web  = typeof sn === 'string' ? '' : (sn.website || '');
     var isActive = (name === window._shopName);
     return '<div class="shop-name-item' + (isActive ? ' active' : '') + '">'
-      + '<span class="shop-name-text">' + name + '</span>'
+      + '<div style="flex:1;">'
+      + '<div class="shop-name-text">' + name + '</div>'
+      + (ig  ? '<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">IG：' + ig + '</div>'  : '')
+      + (web ? '<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">官網：' + web + '</div>' : '')
+      + '</div>'
       + (isActive ? '<span class="shop-name-active-tag">使用中</span>' : '<button class="shop-name-apply" onclick="applyShopName(' + i + ')">套用</button>')
       + '<button class="shop-name-edit" onclick="editShopName(' + i + ')">編輯</button>'
       + (window._shopNames.length > 1 ? '<button class="shop-name-del" onclick="deleteShopName(' + i + ')">刪除</button>' : '')
       + '</div>';
   }).join('');
-  // 同步隱藏的 input
   document.getElementById('shop-name-input').value = window._shopName;
 }
 
 window.applyShopName = function(i) {
-  window._shopName = window._shopNames[i];
+  var sn = window._shopNames[i];
+  window._shopName    = typeof sn === 'string' ? sn : sn.name;
+  window._shopIg      = typeof sn === 'string' ? '' : (sn.ig || '');
+  window._shopWebsite = typeof sn === 'string' ? '' : (sn.website || '');
   document.getElementById('shop-name-input').value = window._shopName;
   saveShopNamesToSettings();
   renderShopNameList();
@@ -841,39 +854,60 @@ window.applyShopName = function(i) {
 };
 
 window.editShopName = function(i) {
-  var newName = prompt('編輯名稱', window._shopNames[i]);
+  var sn      = window._shopNames[i];
+  var curName = typeof sn === 'string' ? sn : sn.name;
+  var curIg   = typeof sn === 'string' ? '' : (sn.ig || '');
+  var curWeb  = typeof sn === 'string' ? '' : (sn.website || '');
+  var newName = prompt('店家名稱', curName);
   if (!newName || !newName.trim()) return;
-  var wasActive = (window._shopNames[i] === window._shopName);
-  window._shopNames[i] = newName.trim();
-  if (wasActive) window._shopName = newName.trim();
+  var newIg  = prompt('IG 帳號（例如 @timuanchi，留空則不顯示）', curIg);
+  var newWeb = prompt('官網網址（例如 timangeladream.com，留空則不顯示）', curWeb);
+  var wasActive = (curName === window._shopName);
+  window._shopNames[i] = { name: newName.trim(), ig: (newIg||'').trim(), website: (newWeb||'').trim() };
+  if (wasActive) {
+    window._shopName    = newName.trim();
+    window._shopIg      = (newIg||'').trim();
+    window._shopWebsite = (newWeb||'').trim();
+  }
   saveShopNamesToSettings();
   renderShopNameList();
 };
 
 window.deleteShopName = function(i) {
   if (window._shopNames.length <= 1) return;
-  if (!confirm('確定刪除「' + window._shopNames[i] + '」？')) return;
-  var wasActive = (window._shopNames[i] === window._shopName);
+  var sn   = window._shopNames[i];
+  var name = typeof sn === 'string' ? sn : sn.name;
+  if (!confirm('確定刪除「' + name + '」？')) return;
+  var wasActive = (name === window._shopName);
   window._shopNames.splice(i, 1);
-  if (wasActive) window._shopName = window._shopNames[0];
+  if (wasActive) {
+    var first = window._shopNames[0];
+    window._shopName    = typeof first === 'string' ? first : first.name;
+    window._shopIg      = typeof first === 'string' ? '' : (first.ig || '');
+    window._shopWebsite = typeof first === 'string' ? '' : (first.website || '');
+  }
   saveShopNamesToSettings();
   renderShopNameList();
 };
 
 window.addShopName = function() {
-  var newName = prompt('輸入新名稱', '');
+  var newName = prompt('店家名稱', '');
   if (!newName || !newName.trim()) return;
-  window._shopNames.push(newName.trim());
+  var newIg  = prompt('IG 帳號（例如 @timuanchi，留空則不顯示）', '');
+  var newWeb = prompt('官網網址（例如 timangeladream.com，留空則不顯示）', '');
+  window._shopNames.push({ name: newName.trim(), ig: (newIg||'').trim(), website: (newWeb||'').trim() });
   saveShopNamesToSettings();
   renderShopNameList();
 };
 
 function saveShopNamesToSettings() {
   set(settingsRef, {
-    shopName:  window._shopName,
-    shopNames: window._shopNames,
-    services:  window._services,
-    startNum:  parseInt(document.getElementById('start-num').value) || 1
+    shopName:    window._shopName,
+    shopIg:      window._shopIg,
+    shopWebsite: window._shopWebsite,
+    shopNames:   window._shopNames,
+    services:    window._services,
+    startNum:    parseInt(document.getElementById('start-num').value) || 1
   });
 }
 
