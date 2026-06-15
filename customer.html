@@ -290,6 +290,7 @@ onValue(stateRef, function(snap) {
       document.getElementById('ticket-time').textContent      = '取號時間：' + t.time;
       document.getElementById('ticket-wait-time').textContent = t.wait + ' 分鐘';
       document.getElementById('ticket-wrap').classList.add('show');
+      document.getElementById('step-select').style.display = 'none';
       updateMyTicketStatus();
     } catch(e) { sessionStorage.removeItem('myTicket'); }
   }
@@ -429,6 +430,7 @@ window.resetTicket = function() {
   window._myTicketId = null;
   document.getElementById('ticket-wrap').classList.remove('show');
   document.getElementById('ticket-card').className = 'ticket-card';
+  document.getElementById('step-select').style.display = 'block';
 };
 
 window.showPage = function(name, btn) {
