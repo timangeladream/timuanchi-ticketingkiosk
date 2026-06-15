@@ -290,7 +290,8 @@ onValue(stateRef, function(snap) {
       document.getElementById('ticket-time').textContent      = '取號時間：' + t.time;
       document.getElementById('ticket-wait-time').textContent = t.wait + ' 分鐘';
       document.getElementById('ticket-wrap').classList.add('show');
-      document.getElementById('step-select').style.display = 'none';
+      var stepEl = document.getElementById('step-select');
+      if (stepEl) stepEl.innerHTML = '';
       updateMyTicketStatus();
     } catch(e) { sessionStorage.removeItem('myTicket'); }
   }
@@ -325,8 +326,6 @@ function renderLive() {
 }
 
 function renderServiceButtons() {
-  // 已取號狀態下不重新顯示服務選擇區
-  if (document.getElementById('ticket-wrap').classList.contains('show')) return;
   var el = document.getElementById('service-buttons');
   if (!el) return;
   el.innerHTML = window._services.map(function(svc,i){
@@ -409,11 +408,12 @@ window.confirmTicket = function() {
   document.getElementById('ticket-time').textContent      = '取號時間：' + time;
   document.getElementById('ticket-wait-time').textContent = totalWait + ' 分鐘';
   document.getElementById('ticket-wrap').classList.add('show');
+  // 刪除服務選擇區內容
+  var stepEl = document.getElementById('step-select');
+  if (stepEl) stepEl.innerHTML = '';
   updateMyTicketStatus();
 
   window._selectedIdx = -1;
-  document.getElementById('confirm-panel').classList.remove('show');
-  renderServiceButtons();
   btn.disabled = false;
 };
 
@@ -432,7 +432,23 @@ window.resetTicket = function() {
   window._myTicketId = null;
   document.getElementById('ticket-wrap').classList.remove('show');
   document.getElementById('ticket-card').className = 'ticket-card';
-  document.getElementById('step-select').style.display = 'block';
+  // 重新建立服務選擇區
+  var stepEl = document.getElementById('step-select');
+  stepEl.innerHTML = '<div class="section-label">選擇服務項目</div>'
+    + '<div id="service-buttons"></div>'
+    + '<div class="confirm-panel" id="confirm-panel">'
+    + '<div class="divider" style="margin-top:6px;"></div>'
+    + '<div class="section-label">確認取號</div>'
+    + '<div class="confirm-card">'
+    + '<div class="confirm-row"><span class="confirm-key">服務項目</span><span class="confirm-val" id="confirm-svc">---</span></div>'
+    + '<div class="confirm-row"><span class="confirm-key">目前等待人數</span><span class="confirm-val" id="confirm-queue">---</span></div>'
+    + '<div class="confirm-row"><span class="confirm-key">預估等待時間</span><span class="confirm-val gold" id="confirm-wait">---</span></div>'
+    + '</div>'
+    + '<button class="btn btn-gold" id="confirm-btn" onclick="confirmTicket()">確定取號</button>'
+    + '<button class="btn" onclick="cancelSelect()">取消</button>'
+    + '</div>';
+  window._selectedIdx = -1;
+  renderServiceButtons();
 };
 
 window.showPage = function(name, btn) {
