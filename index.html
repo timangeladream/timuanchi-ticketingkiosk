@@ -717,10 +717,12 @@ async function loadAndRenderLog() {
     }
   }
 
-  // 排序：最新在上（先按日期，再按 id）
+  // 排序：最新在上（先按日期，再按取號時間）
   allItems.sort(function(a,b){
     if (b.date !== a.date) return b.date > a.date ? 1 : -1;
-    return b.id > a.id ? 1 : -1;
+    var aTime = (a.date || '') + ' ' + (a.time || '');
+    var bTime = (b.date || '') + ' ' + (b.time || '');
+    return bTime > aTime ? 1 : -1;
   });
 
   _filteredLogs = allItems;
