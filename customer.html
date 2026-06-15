@@ -427,12 +427,7 @@ function buildAllLog() {
   return log.length ? log : null;
 }
 
-window.resetTicket = function() {
-  sessionStorage.removeItem('myTicket');
-  window._myTicketId = null;
-  document.getElementById('ticket-wrap').classList.remove('show');
-  document.getElementById('ticket-card').className = 'ticket-card';
-  // 重新建立服務選擇區
+function rebuildStepSelect() {
   var stepEl = document.getElementById('step-select');
   stepEl.innerHTML = '<div class="section-label">選擇服務項目</div>'
     + '<div id="service-buttons"></div>'
@@ -449,6 +444,31 @@ window.resetTicket = function() {
     + '</div>';
   window._selectedIdx = -1;
   renderServiceButtons();
+}
+
+window.resetTicket = function() {
+  if (!confirm('確定要取消目前的號碼並重新取號嗎？')) return;
+
+  // 從 Firebase queue 移除原本的號碼
+  var id = window._myTicketId;
+  if (id) {
+    window._queue = window._queue.filter(function(item){ return item.id !== id; });
+    set(stateRef, {
+      currentCalled: window._currentCalled,
+      currentSvc:    window._currentSvc,
+      totalIssued:   window._totalIssued,
+      queue:         window._queue.length ? window._queue : null,
+      doneList:      window._doneList.length ? window._doneList : null,
+      counters:      window._services.map(function(s){ return s.counter; }),
+      ts:            Date.now()
+    });
+  }
+
+  sessionStorage.removeItem('myTicket');
+  window._myTicketId = null;
+  document.getElementById('ticket-wrap').classList.remove('show');
+  document.getElementById('ticket-card').className = 'ticket-card';
+  rebuildStepSelect();
 };
 
 window.showPage = function(name, btn) {
