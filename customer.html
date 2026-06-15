@@ -325,6 +325,8 @@ function renderLive() {
 }
 
 function renderServiceButtons() {
+  // 已取號狀態下不重新顯示服務選擇區
+  if (document.getElementById('ticket-wrap').classList.contains('show')) return;
   var el = document.getElementById('service-buttons');
   if (!el) return;
   el.innerHTML = window._services.map(function(svc,i){
