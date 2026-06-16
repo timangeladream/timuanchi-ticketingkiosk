@@ -277,6 +277,31 @@
   </div>
 </div>
 
+<!-- 編輯店家名稱 Modal -->
+<div class="modal-overlay" id="modal-edit-shop">
+  <div class="modal" style="height:auto;max-height:90vh;">
+    <div class="modal-header">
+      <span class="modal-title" id="edit-shop-title">編輯店家資訊</span>
+      <button class="modal-close" onclick="closeEditShopModal()">✕</button>
+    </div>
+    <div class="modal-body" style="overflow:visible;">
+      <div style="margin-bottom:14px;">
+        <div class="section-label" style="margin-bottom:8px;">店家名稱</div>
+        <input class="name-input" id="edit-shop-name" type="text" placeholder="輸入店家名稱" style="margin-bottom:0;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <div class="section-label" style="margin-bottom:8px;">IG 帳號</div>
+        <input class="name-input" id="edit-shop-ig" type="text" placeholder="例如 @timuanchi（留空則不顯示）" style="margin-bottom:0;">
+      </div>
+      <div style="margin-bottom:20px;">
+        <div class="section-label" style="margin-bottom:8px;">官網網址</div>
+        <input class="name-input" id="edit-shop-website" type="text" placeholder="例如 timangeladream.com（留空則不顯示）" style="margin-bottom:0;">
+      </div>
+      <button class="save-btn" onclick="saveEditShop()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- 已取消 Modal -->
 <div class="modal-overlay" id="modal-cancelled">
   <div class="modal">
@@ -853,25 +878,48 @@ window.applyShopName = function(i) {
   showAlert('alert-settings', '已套用：' + window._shopName);
 };
 
+var _editShopIdx = -1;
+
 window.editShopName = function(i) {
-  var sn      = window._shopNames[i];
+  var sn = window._shopNames[i];
   var curName = typeof sn === 'string' ? sn : sn.name;
   var curIg   = typeof sn === 'string' ? '' : (sn.ig || '');
   var curWeb  = typeof sn === 'string' ? '' : (sn.website || '');
-  var newName = prompt('店家名稱', curName);
-  if (!newName || !newName.trim()) return;
-  var newIg  = prompt('IG 帳號（例如 @timuanchi，留空則不顯示）', curIg);
-  var newWeb = prompt('官網網址（例如 timangeladream.com，留空則不顯示）', curWeb);
+  _editShopIdx = i;
+  document.getElementById('edit-shop-name').value    = curName;
+  document.getElementById('edit-shop-ig').value      = curIg;
+  document.getElementById('edit-shop-website').value = curWeb;
+  document.getElementById('modal-edit-shop').classList.add('show');
+};
+
+window.closeEditShopModal = function() {
+  document.getElementById('modal-edit-shop').classList.remove('show');
+  _editShopIdx = -1;
+};
+
+window.saveEditShop = function() {
+  var newName = document.getElementById('edit-shop-name').value.trim();
+  var newIg   = document.getElementById('edit-shop-ig').value.trim();
+  var newWeb  = document.getElementById('edit-shop-website').value.trim();
+  if (!newName) { alert('請輸入店家名稱'); return; }
+  var sn      = window._shopNames[_editShopIdx];
+  var curName = typeof sn === 'string' ? sn : sn.name;
   var wasActive = (curName === window._shopName);
-  window._shopNames[i] = { name: newName.trim(), ig: (newIg||'').trim(), website: (newWeb||'').trim() };
+  window._shopNames[_editShopIdx] = { name: newName, ig: newIg, website: newWeb };
   if (wasActive) {
-    window._shopName    = newName.trim();
-    window._shopIg      = (newIg||'').trim();
-    window._shopWebsite = (newWeb||'').trim();
+    window._shopName    = newName;
+    window._shopIg      = newIg;
+    window._shopWebsite = newWeb;
   }
   saveShopNamesToSettings();
   renderShopNameList();
+  closeEditShopModal();
+  showAlert('alert-settings', '已儲存');
 };
+
+document.getElementById('modal-edit-shop').addEventListener('click', function(e) {
+  if (e.target === this) closeEditShopModal();
+});
 
 window.deleteShopName = function(i) {
   if (window._shopNames.length <= 1) return;
@@ -891,13 +939,32 @@ window.deleteShopName = function(i) {
 };
 
 window.addShopName = function() {
-  var newName = prompt('店家名稱', '');
-  if (!newName || !newName.trim()) return;
-  var newIg  = prompt('IG 帳號（例如 @timuanchi，留空則不顯示）', '');
-  var newWeb = prompt('官網網址（例如 timangeladream.com，留空則不顯示）', '');
-  window._shopNames.push({ name: newName.trim(), ig: (newIg||'').trim(), website: (newWeb||'').trim() });
-  saveShopNamesToSettings();
-  renderShopNameList();
+  _editShopIdx = -2; // -2 代表新增模式
+  document.getElementById('edit-shop-name').value    = '';
+  document.getElementById('edit-shop-ig').value      = '';
+  document.getElementById('edit-shop-website').value = '';
+  document.getElementById('edit-shop-title').textContent = '新增店家資訊';
+  document.getElementById('modal-edit-shop').classList.add('show');
+};
+
+// 覆寫 saveEditShop 支援新增模式
+var _origSaveEditShop = window.saveEditShop;
+window.saveEditShop = function() {
+  if (_editShopIdx === -2) {
+    var newName = document.getElementById('edit-shop-name').value.trim();
+    var newIg   = document.getElementById('edit-shop-ig').value.trim();
+    var newWeb  = document.getElementById('edit-shop-website').value.trim();
+    if (!newName) { alert('請輸入店家名稱'); return; }
+    window._shopNames.push({ name: newName, ig: newIg, website: newWeb });
+    saveShopNamesToSettings();
+    renderShopNameList();
+    document.getElementById('edit-shop-title').textContent = '編輯店家資訊';
+    closeEditShopModal();
+    showAlert('alert-settings', '已新增');
+  } else {
+    _origSaveEditShop();
+    document.getElementById('edit-shop-title').textContent = '編輯店家資訊';
+  }
 };
 
 function saveShopNamesToSettings() {
