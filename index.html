@@ -81,6 +81,8 @@
   .act-btn.primary:active { background: rgba(201,168,76,0.1); }
   .act-btn.success { border-color: #5cb85c; color: #5cb85c; }
   .act-btn.success:active { background: rgba(92,184,92,0.1); }
+  .note-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--gold); background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); border-radius: 5px; padding: 2px 7px; cursor: pointer; margin-left: 4px; }
+  .note-add-btn { font-size: 11px; color: var(--text-sub); background: none; border: 1px dashed var(--border); border-radius: 5px; padding: 2px 7px; cursor: pointer; margin-left: 4px; }
 
   .log-item { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
   .log-badge { font-size: 13px; font-weight: 700; color: var(--text-sub); min-width: 60px; letter-spacing: 0.06em; }
@@ -302,6 +304,21 @@
         <div id="edit-links-list"></div>
       </div>
       <button class="save-btn" onclick="saveEditShop()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 備註 Modal -->
+<div class="modal-overlay" id="modal-note">
+  <div class="modal" style="height:auto;max-height:70vh;">
+    <div class="modal-header">
+      <span class="modal-title">新增備註</span>
+      <button class="modal-close" onclick="closeNoteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:10px;" id="note-modal-ticket-info"></div>
+      <textarea id="note-modal-textarea" placeholder="例如：藍色蝴蝶結耳環、長髮夾兩個、姓氏王" style="width:100%;min-height:90px;font-size:14px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+      <button class="save-btn" onclick="saveNote()">儲存備註</button>
     </div>
   </div>
 </div>
@@ -610,12 +627,45 @@ function renderStaff() {
       : st==='progress'
         ? '<button class="act-btn success" onclick="markDone('+idx+')">標記完成</button>'
         : '';
+    var noteHtml = item.note
+      ? '<span class="note-badge" onclick="openNoteModal('+idx+')" title="'+item.note.replace(/"/g,'&quot;')+'">📝 備註</span>'
+      : '<span class="note-add-btn" onclick="openNoteModal('+idx+')">＋ 備註</span>';
     return '<div class="queue-item">'
-      +'<div class="queue-item-top"><span class="queue-badge">'+item.id+'</span><span class="queue-svc">'+item.name+'</span>'+statusTag(st)+'</div>'
+      +'<div class="queue-item-top"><span class="queue-badge">'+item.id+'</span><span class="queue-svc">'+item.name+'</span>'+statusTag(st)+noteHtml+'</div>'
+      +(item.note ? '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;padding-left:2px;">'+item.note+'</div>' : '')
       +(actions?'<div class="queue-item-actions">'+actions+'</div>':'')
       +'</div>';
   }).join('');
 }
+
+// ── 備註 ─────────────────────────────────────────────────
+var _noteIdx = -1;
+
+window.openNoteModal = function(idx) {
+  _noteIdx = idx;
+  var item = window._queue[idx];
+  if (!item) return;
+  document.getElementById('note-modal-ticket-info').textContent = item.id + '　' + item.name;
+  document.getElementById('note-modal-textarea').value = item.note || '';
+  document.getElementById('modal-note').classList.add('show');
+};
+
+window.closeNoteModal = function() {
+  document.getElementById('modal-note').classList.remove('show');
+  _noteIdx = -1;
+};
+
+window.saveNote = function() {
+  if (_noteIdx < 0 || !window._queue[_noteIdx]) { closeNoteModal(); return; }
+  var text = document.getElementById('note-modal-textarea').value.trim();
+  window._queue[_noteIdx].note = text;
+  pushState();
+  closeNoteModal();
+};
+
+document.getElementById('modal-note').addEventListener('click', function(e) {
+  if (e.target === this) closeNoteModal();
+});
 
 // ── MAIN ACTIONS ─────────────────────────────────────────
 window.callNext = function() {
