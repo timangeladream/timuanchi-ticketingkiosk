@@ -334,6 +334,20 @@
   </div>
 </div>
 
+<!-- 檢視備註 Modal -->
+<div class="modal-overlay" id="modal-view-note" style="z-index:110;">
+  <div class="modal" style="height:auto;max-height:60vh;">
+    <div class="modal-header">
+      <span class="modal-title">📝 客人備註</span>
+      <button class="modal-close" onclick="document.getElementById('modal-view-note').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="view-note-content" style="font-size:14px;color:var(--text);line-height:1.7;padding:4px 0 16px;"></div>
+      <button class="btn" onclick="document.getElementById('modal-view-note').classList.remove('show')">關閉</button>
+    </div>
+  </div>
+</div>
+
 <!-- 明細 Modal -->
 <div class="modal-overlay" id="modal-log">
   <div class="modal">
@@ -709,6 +723,10 @@ window.showCancelledLog = function() {
   document.getElementById('modal-cancelled').classList.add('show');
 };
 
+document.getElementById('modal-view-note').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('show');
+});
+
 document.getElementById('modal-cancelled').addEventListener('click', function(e) {
   if (e.target === this) this.classList.remove('show');
 });
@@ -856,23 +874,9 @@ function renderModalPage() {
 }
 
 window.toggleLogNote = function(el) {
-  var existing = el.nextElementSibling;
-  if (existing && existing.classList.contains('inline-note-popup')) {
-    existing.remove();
-    return;
-  }
-  // 移除其他已開啟的備註
-  document.querySelectorAll('.inline-note-popup').forEach(function(p){ p.remove(); });
-  var popup = document.createElement('div');
-  popup.className = 'inline-note-popup';
-  popup.textContent = el.getAttribute('data-note');
-  popup.style.cssText = 'position:absolute;background:var(--surface2);border:1px solid var(--gold);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);max-width:220px;box-shadow:0 4px 16px rgba(0,0,0,0.4);z-index:50;margin-top:4px;';
-  el.parentElement.style.position = 'relative';
-  el.parentElement.appendChild(popup);
-  var rect = el.getBoundingClientRect();
-  var parentRect = el.parentElement.getBoundingClientRect();
-  popup.style.top = (el.offsetTop + 22) + 'px';
-  popup.style.right = '0px';
+  var note = el.getAttribute('data-note');
+  document.getElementById('view-note-content').textContent = note;
+  document.getElementById('modal-view-note').classList.add('show');
 };
 
 window.changePage = function(dir) {
