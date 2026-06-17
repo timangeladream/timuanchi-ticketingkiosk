@@ -324,36 +324,19 @@ onValue(settingsRef, function(snap) {
   renderServiceButtons();
 });
 
-function linkIcon(type) {
-  if (type === 'Instagram') return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>';
-  if (type === 'Facebook')  return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>';
-  if (type === 'Threads')   return '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.473 12.01v-.017c.027-3.579.877-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.594 12c.022 3.086.713 5.496 2.051 7.164 1.43 1.783 3.631 2.698 6.54 2.717 1.677-.012 3.022-.395 4.075-1.164 1.167-.851 1.908-2.184 2.178-3.837H12.21v-2.051h8.816v.942c0 3.081-1.22 5.536-3.37 7.018-1.658 1.14-3.739 1.722-6.47 1.71z"/></svg>';
-  if (type === '官網')      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-  return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-}
-
-function linkUrl(type, value) {
-  if (!value) return '#';
-  if (value.startsWith('http')) return value;
-  if (type === 'Instagram') return 'https://instagram.com/' + value.replace('@','');
-  if (type === 'Facebook')  return 'https://facebook.com/' + value.replace('@','');
-  if (type === 'Threads')   return 'https://threads.net/' + value.replace('@','');
-  return 'https://' + value;
-}
-
 function updateShopLinks() {
   var block = document.getElementById('shop-links');
   if (!block) return;
   var links = window._shopLinks || [];
-  var valid = links.filter(function(l){ return l.value && l.value.trim(); });
+  var valid = links.filter(function(l){ return l.label && l.label.trim() && l.value && l.value.trim(); });
   if (!valid.length) { block.style.display = 'none'; return; }
   block.style.display = 'block';
-  var btnStyle = 'display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);text-decoration:none;font-size:13px;';
+  var btnStyle = 'display:inline-flex;align-items:center;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);text-decoration:none;font-size:13px;font-weight:500;';
   var html = '<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;letter-spacing:0.04em;">🦋 等待時也可以逛逛 🦋</div>';
   html += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">';
   valid.forEach(function(l) {
-    html += '<a href="'+linkUrl(l.type, l.value)+'" target="_blank" rel="noopener" style="'+btnStyle+'">'
-      + linkIcon(l.type) + l.type + '</a>';
+    var url = l.value.startsWith('http') ? l.value : 'https://' + l.value;
+    html += '<a href="'+url+'" target="_blank" rel="noopener" style="'+btnStyle+'">' + l.label + '</a>';
   });
   html += '</div>';
   block.innerHTML = html;

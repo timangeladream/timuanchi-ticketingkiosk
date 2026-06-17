@@ -110,9 +110,9 @@
   .save-btn { width: 100%; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; background: var(--gold); color: var(--dark); border: none; margin-top: 8px; }
   .change-pw-block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
   .link-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-  .link-type-sel { font-size: 13px; border: 1px solid var(--border); border-radius: 7px; padding: 7px 8px; background: var(--surface2); color: var(--text); font-family: inherit; flex-shrink: 0; }
+
   .link-url-inp { flex: 1; font-size: 13px; border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; background: var(--surface2); color: var(--text); font-family: inherit; }
-  .link-url-inp:focus, .link-type-sel:focus { outline: none; border-color: var(--gold); }
+  .link-url-inp:focus { outline: none; border-color: var(--gold); }
   .link-del-btn { font-size: 14px; background: none; border: none; color: #e05c4f; cursor: pointer; flex-shrink: 0; padding: 4px; }
 
   .qr-block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 10px; }
@@ -854,7 +854,7 @@ function renderShopNameList() {
     var name = typeof sn === 'string' ? sn : sn.name;
     var links = typeof sn === 'string' ? [] : (sn.links || []);
     var isActive = (name === window._shopName);
-    var linksHtml = links.map(function(l){ return '<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">' + l.type + (l.label ? '：' + l.label : '') + '</div>'; }).join('');
+    var linksHtml = links.map(function(l){ return '<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">' + (l.label||l.type||'連結') + '</div>'; }).join('');
     return '<div class="shop-name-item' + (isActive ? ' active' : '') + '">'
       + '<div style="flex:1;">'
       + '<div class="shop-name-text">' + name + '</div>'
@@ -881,8 +881,6 @@ window.applyShopName = function(i) {
 var _editShopIdx = -1;
 var _editLinks   = [];
 
-var LINK_TYPES = ['Instagram','Facebook','Threads','官網','其他'];
-
 function renderEditLinksList() {
   var el = document.getElementById('edit-links-list');
   if (!el) return;
@@ -891,31 +889,24 @@ function renderEditLinksList() {
     return;
   }
   el.innerHTML = _editLinks.map(function(link, i) {
-    var opts = LINK_TYPES.map(function(t){ return '<option value="'+t+'"'+(link.type===t?' selected':'')+'>'+t+'</option>'; }).join('');
-    var placeholder = link.type === 'Instagram' ? '@帳號名稱'
-      : link.type === 'Facebook' ? '粉絲頁網址或名稱'
-      : link.type === 'Threads'  ? '@帳號名稱'
-      : link.type === '官網'     ? '網址（例如 timangeladream.com）'
-      : '自訂名稱或網址';
     return '<div class="link-row">'
-      + '<select class="link-type-sel" onchange="updateLinkType('+i+',this.value)">'+opts+'</select>'
-      + '<input class="link-url-inp" type="text" placeholder="'+placeholder+'" value="'+(link.value||'')+'" oninput="updateLinkValue('+i+',this.value)">'
+      + '<input class="link-url-inp" type="text" placeholder="顯示名稱（例如 LINE 官方帳號）" value="'+(link.label||'')+'" oninput="updateLinkLabel('+i+',this.value)" style="flex:1;">'
+      + '<input class="link-url-inp" type="url" placeholder="完整網址（https://...）" value="'+(link.value||'')+'" oninput="updateLinkValue('+i+',this.value)" style="flex:2;">'
       + '<button class="link-del-btn" onclick="removeLinkRow('+i+')">✕</button>'
       + '</div>';
   }).join('');
 }
 
 window.addLinkRow = function() {
-  _editLinks.push({ type: 'Instagram', value: '' });
+  _editLinks.push({ label: '', value: '' });
   renderEditLinksList();
 };
 window.removeLinkRow = function(i) {
   _editLinks.splice(i, 1);
   renderEditLinksList();
 };
-window.updateLinkType = function(i, val) {
-  _editLinks[i].type = val;
-  renderEditLinksList();
+window.updateLinkLabel = function(i, val) {
+  _editLinks[i].label = val;
 };
 window.updateLinkValue = function(i, val) {
   _editLinks[i].value = val;
@@ -942,8 +933,8 @@ window.closeEditShopModal = function() {
 window.saveEditShop = function() {
   var newName  = document.getElementById('edit-shop-name').value.trim();
   if (!newName) { alert('請輸入店家名稱'); return; }
-  var newLinks = _editLinks.filter(function(l){ return l.value && l.value.trim(); })
-                           .map(function(l){ return { type: l.type, value: l.value.trim() }; });
+  var newLinks = _editLinks.filter(function(l){ return l.label && l.label.trim() && l.value && l.value.trim(); })
+                           .map(function(l){ return { label: l.label.trim(), value: l.value.trim() }; });
   if (_editShopIdx === -2) {
     window._shopNames.push({ name: newName, links: newLinks });
     saveShopNamesToSettings();
