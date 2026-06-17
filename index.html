@@ -109,7 +109,7 @@
   .name-input:focus { outline: none; border-color: var(--gold); }
   .save-btn { width: 100%; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; background: var(--gold); color: var(--dark); border: none; margin-top: 8px; }
   .change-pw-block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
-  .link-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .link-row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; overflow: hidden; }
 
   .link-url-inp { flex: 1; font-size: 13px; border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; background: var(--surface2); color: var(--text); font-family: inherit; }
   .link-url-inp:focus { outline: none; border-color: var(--gold); }
@@ -284,7 +284,7 @@
 
 <!-- 編輯店家名稱 Modal -->
 <div class="modal-overlay" id="modal-edit-shop">
-  <div class="modal" style="height:auto;max-height:90vh;">
+  <div class="modal" style="height:auto;max-height:90vh;overflow-x:hidden;">
     <div class="modal-header">
       <span class="modal-title" id="edit-shop-title">編輯店家資訊</span>
       <button class="modal-close" onclick="closeEditShopModal()">✕</button>
@@ -889,9 +889,9 @@ function renderEditLinksList() {
     return;
   }
   el.innerHTML = _editLinks.map(function(link, i) {
-    return '<div class="link-row">'
-      + '<input class="link-url-inp" type="text" placeholder="顯示名稱（例如 LINE 官方帳號）" value="'+(link.label||'')+'" oninput="updateLinkLabel('+i+',this.value)" style="flex:1;">'
-      + '<input class="link-url-inp" type="url" placeholder="完整網址（https://...）" value="'+(link.value||'')+'" oninput="updateLinkValue('+i+',this.value)" style="flex:2;">'
+    return '<div class="link-row" style="flex-wrap:nowrap;min-width:0;">'
+      + '<input class="link-url-inp" type="text" placeholder="名稱" value="'+(link.label||'')+'" oninput="updateLinkLabel('+i+',this.value)" style="flex:0 0 90px;min-width:0;">'
+      + '<input class="link-url-inp" type="url" placeholder="網址（https://...）" value="'+(link.value||'')+'" oninput="updateLinkValue('+i+',this.value)" style="flex:1;min-width:0;">'
       + '<button class="link-del-btn" onclick="removeLinkRow('+i+')">✕</button>'
       + '</div>';
   }).join('');
