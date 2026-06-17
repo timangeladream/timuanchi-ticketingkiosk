@@ -829,15 +829,18 @@ function renderModalPage() {
   var el = document.getElementById('modal-log-content');
   if (!pageItems.length) { el.innerHTML='<p class="empty-msg">此區間無記錄</p>'; }
   else {
-    el.innerHTML = pageItems.map(function(item) {
+    el.innerHTML = pageItems.map(function(item, idx) {
       var st = item.status||'waiting';
       var meta = (item.date ? item.date+'　' : '')+'取號 '+(item.time||'--:--');
       if (item.doneTime) meta += '　完成 '+item.doneTime;
       if (item.cancelTime) meta += '　取消 '+item.cancelTime;
-      var noteHtml = item.note ? '<div class="log-meta" style="color:var(--gold);margin-top:3px;">📝 '+item.note+'</div>' : '';
+      var noteIcon = item.note
+        ? '<span class="note-badge" onclick="toggleLogNote(this)" data-note="'+item.note.replace(/"/g,'&quot;')+'" style="margin-left:0;">📝</span>'
+        : '';
       return '<div class="log-item">'
         +'<span class="log-badge">'+item.id+'</span>'
-        +'<div class="log-detail"><div class="log-svc">'+item.name+'</div><div class="log-meta">'+meta+'</div>'+noteHtml+'</div>'
+        +'<div class="log-detail"><div class="log-svc">'+item.name+'</div><div class="log-meta">'+meta+'</div></div>'
+        +noteIcon
         +statusTag(st)
         +'</div>';
     }).join('');
@@ -851,6 +854,26 @@ function renderModalPage() {
     +'<span class="page-info">'+_currentPage+' / '+totalPages+'</span>'
     +'<button class="page-btn" onclick="changePage(1)" '+((_currentPage>=totalPages)?'disabled':'')+'>下一頁 ›</button>';
 }
+
+window.toggleLogNote = function(el) {
+  var existing = el.nextElementSibling;
+  if (existing && existing.classList.contains('inline-note-popup')) {
+    existing.remove();
+    return;
+  }
+  // 移除其他已開啟的備註
+  document.querySelectorAll('.inline-note-popup').forEach(function(p){ p.remove(); });
+  var popup = document.createElement('div');
+  popup.className = 'inline-note-popup';
+  popup.textContent = el.getAttribute('data-note');
+  popup.style.cssText = 'position:absolute;background:var(--surface2);border:1px solid var(--gold);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);max-width:220px;box-shadow:0 4px 16px rgba(0,0,0,0.4);z-index:50;margin-top:4px;';
+  el.parentElement.style.position = 'relative';
+  el.parentElement.appendChild(popup);
+  var rect = el.getBoundingClientRect();
+  var parentRect = el.parentElement.getBoundingClientRect();
+  popup.style.top = (el.offsetTop + 22) + 'px';
+  popup.style.right = '0px';
+};
 
 window.changePage = function(dir) {
   _currentPage += dir;
