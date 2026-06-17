@@ -833,9 +833,11 @@ function renderModalPage() {
       var st = item.status||'waiting';
       var meta = (item.date ? item.date+'　' : '')+'取號 '+(item.time||'--:--');
       if (item.doneTime) meta += '　完成 '+item.doneTime;
+      if (item.cancelTime) meta += '　取消 '+item.cancelTime;
+      var noteHtml = item.note ? '<div class="log-meta" style="color:var(--gold);margin-top:3px;">📝 '+item.note+'</div>' : '';
       return '<div class="log-item">'
         +'<span class="log-badge">'+item.id+'</span>'
-        +'<div class="log-detail"><div class="log-svc">'+item.name+'</div><div class="log-meta">'+meta+'</div></div>'
+        +'<div class="log-detail"><div class="log-svc">'+item.name+'</div><div class="log-meta">'+meta+'</div>'+noteHtml+'</div>'
         +statusTag(st)
         +'</div>';
     }).join('');
